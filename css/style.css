@@ -1,0 +1,16 @@
+html, body {
+    font-family: "Lucida Console", Monaco, monospace;
+    color: grey;
+    background: black;
+}
+
+a { color: grey; }
+
+#canvas {
+    background: black;
+    image-rendering: pixelated;
+    width: 480px;
+    height: 600px;
+}
+
+

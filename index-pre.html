@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>maypole sim</title>
+    <link href="css/style.css" rel="stylesheet" type="text/css">
+    <body bgcolor="#fff">
+      <div>
+	<div style="float:left;">
+        <canvas id="canvas" width="480" height="640"></canvas>
+	</div>
+	<h1><a href="https://penelope.hypotheses.org/">Penelopean</a> maypole dance simulator</h1>
+
+	<div style=""> &nbsp;
+	<img id="i0" src="images/ind.png" class="ind" />
+	<img id="i1" src="images/clear.png" class="ind" />
+	<img id="i2" src="images/clear.png" class="ind" />
+	<img id="i3" src="images/clear.png" class="ind" />
+	</div>
+
+	Warp pattern matrix
+	<div style=""> A
+	<img id="0" src="images/right.png" class="warp-swap" />
+	<img id="1" src="images/right.png" class="warp-swap" />
+	<img id="2" src="images/left.png" class="warp-swap" />
+	<img id="3" src="images/left.png" class="warp-swap" />
+	<br> B
+	<img id="4" src="images/right.png" class="warp-swap" />
+	<img id="5" src="images/right.png" class="warp-swap" />
+	<img id="6" src="images/left.png" class="warp-swap" />
+	<img id="7" src="images/left.png" class="warp-swap" />
+	<br> C
+	<img id="8" src="images/right.png" class="warp-swap" />
+	<img id="9" src="images/right.png" class="warp-swap" />
+	<img id="10" src="images/left.png" class="warp-swap" />
+	<img id="11" src="images/left.png" class="warp-swap" />
+	<br> D
+	<img id="12" src="images/right.png" class="warp-swap" />
+	<img id="13" src="images/left.png" class="warp-swap" />
+	<img id="14" src="images/left.png" class="warp-swap" />
+	<img id="15" src="images/left.png" class="warp-swap" />
+	</div>
+
+	Weft pattern matrix
+	<div style=""> E
+	<img id="16" src="images/cw.png" class="weft-swap" />
+	<img id="17" src="images/cw.png" class="weft-swap" />
+	<img id="18" src="images/cw.png" class="weft-swap" />
+	<img id="19" src="images/cw.png" class="weft-swap" />
+	<br> F
+	<img id="20" src="images/cw.png" class="weft-swap" />
+	<img id="21" src="images/cw.png" class="weft-swap" />
+	<img id="22" src="images/cw.png" class="weft-swap" />
+	<img id="23" src="images/cw.png" class="weft-swap" />
+	<br> G
+	<img id="24" src="images/cw.png" class="weft-swap" />
+	<img id="25" src="images/cw.png" class="weft-swap" />
+	<img id="26" src="images/cw.png" class="weft-swap" />
+	<img id="27" src="images/cw.png" class="weft-swap" />
+	<br> H
+	<img id="28" src="images/cw.png" class="weft-swap" />
+	<img id="29" src="images/cw.png" class="weft-swap" />
+	<img id="30" src="images/cw.png" class="weft-swap" />
+	<img id="31" src="images/cw.png" class="weft-swap" />
+	</div>
+
+
+	
+        <div style="display:none;">
+          <pre><div id="output"></div></pre>
+          <pre><div id="compiled"></div></pre>
+        </div>
+      </div>
+      
+    </body>
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="js/ditto.js"></script>
+
+    <script>
+
+      function indicate(pos) {
+      for (i=0; i<4; i++) {
+	$('#i'+i).attr("src", "images/clear.png");
+      }
+        $('#i'+pos).attr("src", "images/ind.png");
+      }
+      
+$(function(){
+  $('.warp-swap').on('click', function() {
+    if ($(this).attr('class') == 'warp-swap') {
+      pattern_update(this.id,'f');
+      this.src = this.src.replace('left','right');
+    } else {
+      pattern_update(this.id,'b');
+      this.src = this.src.replace('right','left');
+    }
+    $(this).toggleClass('on');
+  });
+  $('.weft-swap').on('click', function() {
+    if ($(this).attr('class') == 'weft-swap') {
+      pattern_update(this.id,'b');
+      this.src = this.src.replace('cw','acw');
+    } else {
+      pattern_update(this.id,'f');
+      this.src = this.src.replace('acw','cw');
+    }
+    $(this).toggleClass('on');
+  });
+});
+
+      $( document ).ready(function() {
+      init_resources({{RESOURCES}});
+      init_static('{{SYNTAX}}','{{CODE}}');    
+      });
+    </script>
+
+</html>

@@ -1,0 +1,185 @@
+;; -*- mode: scheme; -*-
+(load "scm/maths.jscm")
+(load "scm/random.jscm")
+
+(define canvas (document.getElementById "canvas"))
+(define ctx (canvas.getContext "2d"))
+(define screen-width 480)
+(define screen-height 600)
+(set! canvas.width screen-width)
+(set! canvas.height screen-height)
+(define load-time (/ (js "new Date()") 1000))
+(define current-time 0)
+(define current-delta 0)
+(define swing-squash 1.0)
+
+(define (update-time)
+  (let ((t (- (/ (js "new Date()") 1000) load-time)))
+    (set! current-delta (- t current-time))
+    (set! current-time t)))
+
+(define (make-robot name type code pc d a col t ribbon)
+  (list name type code pc d a col t ribbon))
+
+(define (robot-name r) (list-ref r 0))
+(define (robot-type r) (list-ref r 1))
+(define (robot-code r) (list-ref r 2))
+(define (robot-modify-code r v) (list-replace r 2 v))
+(define (robot-pc r) (list-ref r 3))
+(define (robot-modify-pc r s) (list-replace r 3 s))
+(define (robot-d r) (list-ref r 4))
+(define (robot-modify-d r s) (list-replace r 4 s))
+(define (robot-a r) (list-ref r 5))
+(define (robot-modify-a r s) (list-replace r 5 s))
+(define (robot-col r) (list-ref r 6))
+(define (robot-t r) (list-ref r 7))
+(define (robot-modify-t r s) (list-replace r 7 s))
+(define (robot-ribbon r) (list-ref r 8))
+(define (robot-modify-ribbon r s) (list-replace r 8 s))
+
+(define (robot-render r ctx px py)
+  (ctx.beginPath)
+  (let ((x (* (robot-d r) (cos (robot-a r))))
+	(y (* (robot-d r) (sin (robot-a r)) 0.5)))
+    (set! ctx.fillStyle (robot-col r))
+    (ctx.arc (+ px x) (+ py y) 10 0 (* Math.PI 2) true)
+    (ctx.closePath)
+    (ctx.fill)
+    
+    (set! ctx.fillStyle (robot-col r))
+    (set! ctx.strokeStyle (robot-col r))
+    (set! ctx.lineWidth 6)
+    (ctx.beginPath)
+    (ctx.moveTo (+ px x) (+ py y))
+    (for-each
+     (lambda (p)
+       (ctx.lineTo (+ px (list-ref p 0))
+		   (+ py (list-ref p 1))))
+     (robot-ribbon r))
+    (ctx.stroke)
+    (set! ctx.lineWidth 1)
+  
+    (set! ctx.fillStyle "#000")
+    (ctx.fillText (robot-name r) (- (+ px x) 3) (+ (+ py y) 5))
+  ))
+
+(define PI Math.PI)
+(define tick-dur 1)
+(define warp-dist 100)
+
+(define (cosi t) (sin (* t PI)))
+(define (clamp v min max) (if (> v max) max (if (< v min) min v)))
+
+(define (fix-size l max) (l.slice 0 max))
+
+(define (robot-instr r offs)
+  (list-ref
+   (robot-code r)
+   (modulo (+ (robot-pc r) offs)
+	   (length (robot-code r)))))
+
+(define (robot-update r t d) 
+  (let ((dir ;; calculate the direction from the token 
+	 (* (cond
+	     ((eq? (robot-instr r 0) "f") 1)
+	     ((eq? (robot-instr r 0) "b") -1)
+	     (else 0))
+	    ;; if the next token is different, smooth
+	    (if (not (eq? (robot-instr r 0) (robot-instr r 1)))	      
+		(cosi (/ (robot-t r) tick-dur))
+		1)))
+	;; update the time and program counter
+	(r (if (> (robot-t r) tick-dur)
+	       (robot-modify-t
+		(robot-modify-pc
+		 r (modulo (+ (robot-pc r) 1) (length (robot-code r))))
+		0)
+	       (robot-modify-t r (+ (robot-t r) d)))))
+    (robot-modify-ribbon
+     (if (eq? (robot-type r) "warp")
+	 (robot-modify-d r (clamp (+ (robot-d r) (* d dir warp-dist)) 50 150))
+	 (robot-modify-a r (+ (robot-a r) (* d dir (/ PI 2)))))
+     (fix-size
+      (cons 
+       (list
+	(* (robot-d r) (cos (robot-a r)))
+	(* (robot-d r) (sin (robot-a r)) 0.5))
+       (index-map
+	(lambda (i p)	  
+	  (list (* (list-ref p 0) 0.995)
+		(+ (list-ref p 1) (* -130 d))))
+	(robot-ribbon r)))
+      240))))
+
+(define rot (/ PI 4))
+
+(define r
+  (list
+   (make-robot "A" "warp" "ffbb" 0 50 rot  "#5aa" 0 '())
+   (make-robot "B" "warp" "ffbb" 0 50 (+ rot (/ PI 2)) "#5aa" 0 '())
+   (make-robot "C" "warp" "ffbb" 0 50 (+ rot PI)  "#5aa" 0 '())
+   (make-robot "D" "warp" "ffbb" 0 50 (+ rot PI (/ PI 2)) "#5aa" 0 '())
+   (make-robot "E" "weft" "ffff" 0 100 0  "#aa5" 0 '())
+   (make-robot "F" "weft" "ffff" 0 100 (/ PI 2) "#aa5" 0 '())
+   (make-robot "G" "weft" "ffff" 0 100 PI "#aa5" 0 '())
+   (make-robot "H" "weft" "ffff" 0 100 (+ PI (/ PI 2)) "#aa5" 0 '())))
+
+
+(define (str-replaceat s i c)
+  (+ (s.substr 0 i) c (s.substr (+ i 1) (length s))))
+
+(define (pattern-update id dir)
+  (let ((robot-id (floor (/ (string->number id) 4)))
+	(pattern-loc (modulo (string->number id) 4)))
+    (let ((new-code (robot-code (list-ref r robot-id))))
+      (set! new-code (str-replaceat new-code pattern-loc dir))
+      (set! r (list-replace r robot-id
+			    (robot-modify-code
+			     (list-ref r robot-id)
+			     new-code))))))
+
+
+(define tcanvas (document.createElement "canvas"))
+(set! tcanvas.width screen-width)
+(set! tcanvas.height screen-height)
+(define tctx (tcanvas.getContext "2d"))
+;;(set! ctx.imageSmoothingEnabled #f)
+;;(set! tctx.imageSmoothingEnabled #f)
+
+(define (render)
+  (update-time)
+  ;;(let ((im (ctx.getImageData 0 0 screen-width screen-height))))
+    (ctx.clearRect 0 0 screen-width screen-height)
+    
+    (set! r (map
+	     (lambda (r)
+	       (robot-update r current-time current-delta))
+	     r))
+
+    (when (> (robot-t (list-ref r 0)) tick-dur)
+	  (indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))
+    
+    (ctx.beginPath)
+    (ctx.arc 240 320 20 0 (* Math.PI 2) true)
+    (ctx.closePath)
+    (set! ctx.fillStyle "#000")
+    (ctx.fill)
+
+    (for-each
+     (lambda (r)
+       (robot-render r ctx 240 520))
+     r)
+    
+;;    (tctx.putImageData im 0 0)
+
+;     (ctx.drawImage
+;      tcanvas
+;      swing-squash -2.2
+;      (- screen-width (* swing-squash 2)) (+ screen-height 2)
+;      )
+    
+    (window.requestAnimationFrame render ctx))
+
+(window.requestAnimationFrame render ctx)
+
+  

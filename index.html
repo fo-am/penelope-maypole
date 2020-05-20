@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>maypole sim</title>
+    <link href="css/style.css" rel="stylesheet" type="text/css">
+    <body bgcolor="#fff">
+      <div>
+	<div style="float:left;">
+        <canvas id="canvas" width="480" height="640"></canvas>
+	</div>
+	<h1><a href="https://penelope.hypotheses.org/">Penelopean</a> maypole dance simulator</h1>
+
+	<div style=""> &nbsp;
+	<img id="i0" src="images/ind.png" class="ind" />
+	<img id="i1" src="images/clear.png" class="ind" />
+	<img id="i2" src="images/clear.png" class="ind" />
+	<img id="i3" src="images/clear.png" class="ind" />
+	</div>
+
+	Warp pattern matrix
+	<div style=""> A
+	<img id="0" src="images/right.png" class="warp-swap" />
+	<img id="1" src="images/right.png" class="warp-swap" />
+	<img id="2" src="images/left.png" class="warp-swap" />
+	<img id="3" src="images/left.png" class="warp-swap" />
+	<br> B
+	<img id="4" src="images/right.png" class="warp-swap" />
+	<img id="5" src="images/right.png" class="warp-swap" />
+	<img id="6" src="images/left.png" class="warp-swap" />
+	<img id="7" src="images/left.png" class="warp-swap" />
+	<br> C
+	<img id="8" src="images/right.png" class="warp-swap" />
+	<img id="9" src="images/right.png" class="warp-swap" />
+	<img id="10" src="images/left.png" class="warp-swap" />
+	<img id="11" src="images/left.png" class="warp-swap" />
+	<br> D
+	<img id="12" src="images/right.png" class="warp-swap" />
+	<img id="13" src="images/left.png" class="warp-swap" />
+	<img id="14" src="images/left.png" class="warp-swap" />
+	<img id="15" src="images/left.png" class="warp-swap" />
+	</div>
+
+	Weft pattern matrix
+	<div style=""> E
+	<img id="16" src="images/cw.png" class="weft-swap" />
+	<img id="17" src="images/cw.png" class="weft-swap" />
+	<img id="18" src="images/cw.png" class="weft-swap" />
+	<img id="19" src="images/cw.png" class="weft-swap" />
+	<br> F
+	<img id="20" src="images/cw.png" class="weft-swap" />
+	<img id="21" src="images/cw.png" class="weft-swap" />
+	<img id="22" src="images/cw.png" class="weft-swap" />
+	<img id="23" src="images/cw.png" class="weft-swap" />
+	<br> G
+	<img id="24" src="images/cw.png" class="weft-swap" />
+	<img id="25" src="images/cw.png" class="weft-swap" />
+	<img id="26" src="images/cw.png" class="weft-swap" />
+	<img id="27" src="images/cw.png" class="weft-swap" />
+	<br> H
+	<img id="28" src="images/cw.png" class="weft-swap" />
+	<img id="29" src="images/cw.png" class="weft-swap" />
+	<img id="30" src="images/cw.png" class="weft-swap" />
+	<img id="31" src="images/cw.png" class="weft-swap" />
+	</div>
+
+
+	
+        <div style="display:none;">
+          <pre><div id="output"></div></pre>
+          <pre><div id="compiled"></div></pre>
+        </div>
+      </div>
+      
+    </body>
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="js/ditto.js"></script>
+
+    <script>
+
+      function indicate(pos) {
+      for (i=0; i<4; i++) {
+	$('#i'+i).attr("src", "images/clear.png");
+      }
+        $('#i'+pos).attr("src", "images/ind.png");
+      }
+      
+$(function(){
+  $('.warp-swap').on('click', function() {
+    if ($(this).attr('class') == 'warp-swap') {
+      pattern_update(this.id,'f');
+      this.src = this.src.replace('left','right');
+    } else {
+      pattern_update(this.id,'b');
+      this.src = this.src.replace('right','left');
+    }
+    $(this).toggleClass('on');
+  });
+  $('.weft-swap').on('click', function() {
+    if ($(this).attr('class') == 'weft-swap') {
+      pattern_update(this.id,'b');
+      this.src = this.src.replace('cw','acw');
+    } else {
+      pattern_update(this.id,'f');
+      this.src = this.src.replace('acw','cw');
+    }
+    $(this).toggleClass('on');
+  });
+});
+
+      $( document ).ready(function() {
+      init_resources({"scm/maths.jscm": ";; -*- mode: scheme; -*-\n;; Planet Fluxus Copyright (C) 2013 Dave Griffiths\n;;\n;; This program is free software: you can redistribute it and/or modify\n;; it under the terms of the GNU Affero General Public License as\n;; published by the Free Software Foundation, either version 3 of the\n;; License, or (at your option) any later version.\n;;\n;; This program is distributed in the hope that it will be useful,\n;; but WITHOUT ANY WARRANTY; without even the implied warranty of\n;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n;; GNU Affero General Public License for more details.\n;;\n;; You should have received a copy of the GNU Affero General Public License\n;; along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\n(load \"scm/base.jscm\")\n\n(js \"var sin=Math.sin\")\n(js \"var cos=Math.cos\")\n(js \"var tan=Math.tan\")\n(js \"var pi = Math.PI\")\n(js \"var two_pi = Math.PI*2\")\n\n(define (sqrt a) (Math.sqrt a))\n(define (pow a b) (Math.pow a b))\n(define (square x) (* x x))\n(define (trunc x) (js \"~~x\"))\n(define (feq? a b) (< (Math.abs (- a b)) Number.EPSILON))\n(define (abs x) (Math.abs x))\n\n(define (clamp v min max)\n  (cond\n   ((< v min) min)\n   ((> v max) max)   \n   (else v)))\n\n(define (vector x y z) (list x y z))\n\n(define (vx v) (list-ref v 0))\n(define (vy v) (list-ref v 1))\n(define (vz v) (list-ref v 2))\n(define (vw v) (list-ref v 3))\n\n(define (veq? a b) \n  (and (feq? (vx a) (vx b))\n       (feq? (vy a) (vy b))\n       (feq? (vz a) (vz b))))\n\n(define (vector-clone v)\n  (vector (vx v) (vy v) (vz v)))\n\n(define (vadd a b)\n  (vector (+ (vx a) (vx b))\n          (+ (vy a) (vy b))\n          (+ (vz a) (vz b))))\n\n(define (vmag v)\n  (sqrt (+ (square (vx v))\n           (square (vy v))\n           (square (vz v)))))\n\n(define (vsub a b)\n  (vector (- (vx a) (vx b))\n          (- (vy a) (vy b))\n          (- (vz a) (vz b))))\n\n(define (vneg a)\n  (vector (- 0 (vx a))\n          (- 0 (vy a))\n          (- 0 (vz a))))\n\n(define (vmul v a)\n  (vector (* (vx v) a) (* (vy v) a) (* (vz v) a)))\n\n(define (vdiv v a)\n  (vector (/ (vx v) a) (/ (vy v) a) (/ (vz v) a)))\n\n(define (vdist a b)\n  (vmag (vsub a b)))\n\n(define (vdist-squared a b)\n  (let ((v (vsub a b)))\n    (+ (square (vx v))\n       (square (vy v))\n       (square (vz v)))))\n\n(define (vlerp v1 v2 t)\n\t(vadd v1 (vmul (vsub v2 v1) t)))\n\n(define (vnormalise v)\n  (vdiv v (vmag v)))\n\n(define (vdot a b)\n  (+ (* (vx a) (vx b)) \n     (* (vy a) (vy b))\n     (* (vz a) (vz b))))\n\n(define (vcross a b)\n  (vector (- (* (vy a) (vz b)) (* (vz a) (vy b)))\n\t  (- (* (vz a) (vx b)) (* (vx a) (vz b)))\n\t  (- (* (vx a) (vy b)) (* (vy a) (vx b)))))\n\n(define (rndvec) (vector (rndf) (rndf) (rndf)))\n(define (crndvec) (vsub (rndvec) (vector 0.5 0.5 0.5)))\n(define (crndf) (- (rndf) 0.5))\n\n(define (hcrndvec s)\n  (let ((a (* (rndf) 360)))\n    (vector (* s (sin a)) (* s (cos a)) 0)))\n\n;; steal quats from the gl library\n(define rad-conv 0.017453292)\n\n(define (quat x y z w) (quat4.create (list x y z w)))\n\n(define (qaxisangle axis angle)\n  (let ((angle (* angle 0.017453292)))\n    (let ((axis (vmul (vnormalise axis) (sin (/ angle 2)))))\n      (quat (vx axis) (vy axis) (vz axis) (cos (/ angle 2))))))\n\n(define (qnormalise q)  (quat4.normalise q))\n(define (qmul a b) (quat4.multiply a b))\n(define (q->m q) (quat4.toMat4 q))\n(define (qslerp a b t) \n  (let ((r (quat 0 0 0 0)))\n    (quat4.slerp a b t r)))\n\n;; note - operations (and above) destructive but faster - todo: fix\n\n(define (midentity) (mat4.identity (mat4.create)))\n(define (minverse m) (mat4.inverse m))\n(define (mmul a b) (mat4.multiply a b))\n(define (mtransform m v) (mat4.multiplyVec3 m v))\n(define (mtranslate m v) (mat4.translate m v))\n(define (mscale m v) (mat4.scale m v))\n(define (mrotate m axis angle) (mat4.rotate m angle axis))\n\n\n(define (maim2 m v up)\n  (let ((l (vector 0 0 0))\n\t(u (vector 0 0 0))\n        (aim-matrix (mat4.create)))\n    (vec3.cross v up l)\n    (vec3.cross v l u)\n\n    (js \"aim_matrix[0]=vx(v);\")\n    (js \"aim_matrix[1]=vy(v);\")\n    (js \"aim_matrix[2]=vz(v);\")\n    (js \"aim_matrix[3]=0;\")\n\n    (js \"aim_matrix[4]=vx(l);\")\n    (js \"aim_matrix[5]=vy(l);\")\n    (js \"aim_matrix[6]=vz(l);\")\n    (js \"aim_matrix[7]=0;\")\n\n    (js \"aim_matrix[8]=vx(u);\")\n    (js \"aim_matrix[9]=vy(u);\")\n    (js \"aim_matrix[10]=vz(u);\")\n    (js \"aim_matrix[11]=0;\")\n\n    (js \"aim_matrix[12]=0;\")\n    (js \"aim_matrix[13]=0;\")\n    (js \"aim_matrix[14]=0;\")\n    (js \"aim_matrix[15]=1;\")\n\n    (mat4.multiply m aim-matrix)))\n\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n\n(define (v2drot v a)\n  (let ((a (* a 0.0174532925)))\n    (vector\n     (+ (* (vx v) (cos a)) (* (vy v) (- 0 (sin a))))\n     (+ (* (vx v) (sin a)) (* (vy v) (cos a)))\n     0)))\n\n(define (vec2 x y) (list x y))\n\n(define (v2eq? a b)\n  (and (eq? (vx a) (vx b))\n       (eq? (vy a) (vy b))))\n\n(define (v2add a b)\n  (vec2 (+ (vx a) (vx b))\n          (+ (vy a) (vy b))))\n\n(define (v2sub a b)\n  (vec2 (- (vx a) (vx b))\n\t(- (vy a) (vy b))))\n\n(define (v2mul v a)\n  (vec2 (* (vx v) a) (* (vy v) a)))\n\n(define (v2mul2 a b)\n  (vec2 (* (vx a) (vx b)) (* (vy a) (vy b))))\n\n(define (v2mag v)\n  (sqrt (+ (square (vx v))\n           (square (vy v)))))\n\n(define (v2dist a b)\n  (v2mag (v2sub a b)))\n\n(define (v2lerp a b t)\n  (vec2\n   (+ (* (vx a) (- 1 t)) (* (vx b) t))   \n   (+ (* (vy a) (- 1 t)) (* (vy b) t))))\n\n;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n\n(define (maths-unit-test)\n  (assert (feq? (sqrt 25) 5) \"sqrt\")\n  (assert (feq? (pow 3 2) 7) \"pow\")\n  (assert (eq? (square 10) 100) \"square\")\n  (assert (eq? (trunc 40.4) 40) \"trunc\")\n  (assert (feq? 20.4 20.4) \"feq? 1\")\n  (assert (not (feq? 20.4 20.42)) \"feq? 2\")\n  (let ((v (vector 1 2 3)))\n    (assert (feq? (vx v) 1) \"vx\")\n    (assert (feq? (vy v) 2) \"vy\")\n    (assert (feq? (vz v) 3) \"vz\")\n    (assert (veq? v (vector 1 2 3)) \"veq? 1\") \n    (assert (not (veq? v (vector 30 20 30))) \"veq? 2\") \n    (let ((vc (vector-clone v)))\n      (assert (veq? vc (vector 1 2 3)) \"vector-clone 1\")\n      (set! vc (vector 0 0 0))\n      (assert (veq? v (vector 1 2 3)) \"vector-clone 2\"))\n    (assert (veq? (vadd v (vector 1 1 1)) (vector 2 3 4)) \"vadd\")\n    (assert (feq? (vmag (vector 10 0 0)) 10) \"vmag\")\n    (assert (veq? (vsub v (vector 2 2 2)) (vector -1 0 1)) \"vsub\")\n    (assert (veq? (vneg v) (vector -1 -2 -3)) \"vneg\")\n    (assert (veq? (vmul v 10) (vector 10 20 30)) \"vmul\")\n    (assert (veq? (vdiv v 2) (vector 0.5 1 1.5)) \"vdiv\")\n    (assert (feq? (vdist (vector 10 0 0) (vector 0 0 0)) 10) \"vdist\")\n    (assert (veq? (vlerp (vector 0 0 0) (vector 10 20 30) 0.5)\n\t\t  (vector 5 10 15)) \"vlerp\")\n    (assert (feq? (vmag (vnormalise (vector 1 4 923))) 1) \"vnormalise\")\n    (assert (feq? (vdot (vector 0 0 0) (vector 10 0 0)) 10) \"vdot\")\n    (assert (feq? (vcross (vector 1 0 0) (vector 0 1 0)) (vector 0 0 1)) \n\t    \"vcross\")\n    ;; todo: add quat and matrix\n    )))\n\n(maths-unit-test)\n", "scm/base.jscm": ";; -*- mode: scheme; -*-\n;; Planet Fluxus Copyright (C) 2013 Dave Griffiths\n;;\n;; This program is free software: you can redistribute it and/or modify\n;; it under the terms of the GNU Affero General Public License as\n;; published by the Free Software Foundation, either version 3 of the\n;; License, or (at your option) any later version.\n;;\n;; This program is distributed in the hope that it will be useful,\n;; but WITHOUT ANY WARRANTY; without even the implied warranty of\n;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n;; GNU Affero General Public License for more details.\n;;\n;; You should have received a copy of the GNU Affero General Public License\n;; along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\n;; basic scheme stuff we need, and some tests\n\n(define display (lambda (str) (console.log str)))\n(define newline (lambda () (console.log \"\\n\")))\n\n(define (ditto-print-list a)\n  (let ((str \"\"))\n    (set! str (+ str \"[\"))\n    (js \"for (var i=0; i<a.length; i++) {\")\n    (set! str (+ str (ditto-pretty-print (list-ref a i))))\n    (when (not (eq? i (- a.length 1))) (set! str (+ str \" \")))\n    (js \"}\")\n    (set! str (+ str \"]\"))\n    str))\n\n(define (ditto-pretty-print a)\n  (cond\n   ((list? a) (ditto-print-list a))\n   (else (+ \"\" a))))\n\n(define (msg a) \n  (console.log (ditto-pretty-print a)))\n\n(define (dbg a) (msg a) a)\n(define (error a) (msg a))\n\n(define (zero? n) (js \"n===0\"))\n(define (eqv? a b) (eq? a b))\n(define (equal? a b) (eq? a b))\n(define (floor n) (Math.floor n))\n(define (fmod a b) (js \"Number((a - (Math.floor(a / b) * b)).toPrecision(8));\"))\n(define (fabs x) (Math.abs x))\n(define (string->number x) (parseFloat x))\n\n(define (random n)\n  (Math.floor (* (Math.random) n)))\n\n(define (random-range a b)\n  (+ a (Math.floor (* (Math.random) (- b a)))))\n\n(define (rndf) (Math.random))\n\n(define (max a b) (if (> a b) a b))\n(define (min a b) (if (< a b) a b))\n\n(define (substring str s e)\n  (js \"str.substring(s, e);\"))\n\n(define (string-length str)\n  (js \"str.length\"))\n\n(define (string->list str)\n  (str.split \"\"))\n\n(define (string-ref str i)\n  (js \"str[i]\"))\n\n;; replaced by underlying iterative version\n;;(define foldl\n;;  (lambda (fn v l)\n;;    (cond\n;;     ((null? l) v)\n;;     (else (foldl fn (fn (car l) v) (cdr l))))))\n\n;; replaced by underlying iterative version\n;; (define (list-contains? l v)\n;;   (cond\n;;     ((null? l) #f)\n;;     ((eq? (car l) v) #t)\n;;     (else (list-contains? (cdr l) v))))\n\n(define map\n  (lambda (fn l)\n    (foldl\n     (lambda (i r)\n       (append r (list (fn i))))\n     () l)))\n\n(define map2\n  (lambda (fn l l2)\n    (foldl\n     (lambda (a b r)\n       (append r (list (fn a b))))\n     () l l2)))\n\n(define filter\n  (lambda (fn l)\n    (foldl\n     (lambda (i r)\n       (if (fn i) (append r (list i)) r))\n     \'() l)))\n\n(define (list-remove l i)\n  (filter (lambda (a) (not (eq? a i))) l))\n\n(define for-each\n  (lambda (fn l)\n    (foldl\n     (lambda (i r)\n       (fn i))\n     ()\n     l) #f))\n\n(define (assoc k l)\n  (foldl\n   (lambda (i r)\n     (if (eq? (car i) k) i r))\n   #f l))\n\n;; index versions provide count for first argument\n\n(define index-foldl\n  (lambda (fn s l)\n    (cadr (foldl\n           (lambda (e r)\n             (list\n              (+ (car r) 1)\n              (fn (car r) e (cadr r))))\n           (list 0 s)\n           l))))\n\n\n(define index-map\n  (lambda (fn l)\n    (cadr (foldl\n           (lambda (e r)\n             (list\n              (+ (car r) 1)\n              (append (cadr r) (list (fn (car r) e)))))\n           (list 0 ())\n           l))))\n\n(define index-for-each\n  (lambda (fn l)\n    (foldl\n     (lambda (e r)\n       (fn r e)\n       (+ r 1))\n     0 l)))\n\n;; fix js modulo irt negative numbers\n(define (modulo m n) (js \"((m%n)+n)%n\"))\n(define (quotient m n) (Math.floor (/ m n)))\n\n(define (sin a) (Math.sin a))\n(define (cos a) (Math.cos a))\n\n(define list-equal?\n  (lambda (a b)\n    (define _\n      (lambda (a b)\n        (cond\n         ((null? a) #t)\n         ((not (eq? (car a) (car b))) #f)\n         (else (_ (cdr a) (cdr b))))))\n    (if (eq? (length a) (length b))\n        (_ a b) #f)))\n\n;; replaced by js version\n;;(define build-list\n;;  (lambda (n fn)\n;;    (define _\n;;      (lambda (i)\n;;        (cond\n;;         ((eq? i (- n 1)) ())\n;;         (else\n;;          (cons (fn n) (_ (+ i 1) fn))))))\n;;    (_ 0)))\n\n(define print-list\n  (lambda (l)\n    (when (not (null? l))\n          (console.log (car l))\n          (print-list (cdr l)))))\n\n(define reverse\n  (lambda (l)\n    (cond\n     ((null? l) ())\n     (else\n      (append (reverse (cdr l)) (list (car l)))))))\n\n(define (choose l)\n  (list-ref l (random (length l))))\n\n(define (delete-n l n)\n  (if (eq? n 0)\n      (cdr l)\n      (append (list (car l)) (delete-n (cdr l) (- n 1)))))\n\n(define (shuffle l)\n  (cond ((null? l) ())\n        ((< (length l) 2)\n         (list (car l)))\n        (else\n         (let ((item (random (length l))))\n           (cons (list-ref l item)\n                 (shuffle (delete-n l item)))))))\n\n(define (crop l n)\n  (cond\n   ((null? l) ())\n   ((zero? n) ())\n   (else (cons (car l) (crop (cdr l) (- n 1))))))\n\n;; return (picked left-over)\n(define (pick-out-of l n)\n  (define (_ p l n)\n    (cond\n      ((or (null? l) (zero? n))\n       (list p l))\n      (else\n       (let ((item (random (length l))))\n         (_\n          (cons (list-ref l item) p)\n          (delete-n l item)\n          (- n 1))))))\n  (_ () l n))\n\n(define factorial\n  (lambda (n)\n    (if (= n 0) 1\n        (* n (factorial (- n 1))))))\n\n\n(define (symbol->string sym)\n  sym);; (ditto.symbol_string sym))\n\n(define (string->symbol str)\n  ;(ditto.find_symbol str)\n  str)\n\n;; convert code to text form\n; (define (scheme-txt v)\n;  (cond\n;   ((number? v) v)\n;   ((string? v) (string-append \"\\\"\" v \"\\\"\"))\n;   ((boolean? v) (if v \"#t\" \"#f\"))\n;   ((list? v)\n;    (cond\n;     ((null? v) \"()\")\n;     (else\n;      (list-txt v))))\n;   (else (msg (+ \"scheme->txt, unsupported type for \" v)))))\n;\n;(define (list-txt l)\n;  (define (_ l s)\n;    (cond\n;     ((null? l) s)\n;     (else\n;      (_ (cdr l)\n;         (string-append\n;          s\n;          (if (not (eq? s \"\")) \" \" \"\")\n;          (scheme-txt (car l)))))))\n;  (string-append \"(list \" (_ l \"\") \")\"))\n\n(define (assert condition message) \n  (when (not condition) \n\t(js \"; throw message || \'assertion failed\';\")))\n\n(define unit-test\n  (lambda ()\n    (define a 0)\n    (set! a 10)\n    (when (not (eq? 4 4)) (display \"eq? failed\"))\n    (when (eq? 2 4) (display \"eq?(2) failed\"))\n    (when (not (eq? (car (list 3 2 1)) 3)) (display \"car failed\"))\n    (when (not (eq? (cadr (list 3 2 1)) 2)) (display \"cadr failed\"))\n    (when (not (eq? (caddr (list 3 2 1)) 1)) (display \"caddr failed\"))\n\n    (when (not (eq? (begin 1 2 3) 3)) (display \"begin failed\"))\n    (when (not (eq? (list-ref (list 1 2 3) 2) 3)) (display \"list-ref failed\"))\n    (when (not (list? (list 1 2 3))) (display \"list? failed\"))\n    (when (list? 3) (display \"list?(2) failed\"))\n    (when (null? (list 1 2 3)) (display \"null? failed\"))\n    (when (not (null? (list))) (display \"null?(2) failed\"))\n    (when (not (eq? (length (list 1 2 3 4)) 4)) (display \"length failed\"))\n    (when (not (list-equal? (list 1 2 3 4) (list 1 2 3 4))) (display \"list-equal failed\"))\n    (when (list-equal? (list 1 2 3 4) (list 1 4 3 4)) (display \"list-equal(2) failed\"))\n    (when (not (list-equal? (append (list 1 2 3) (list 4 5 6)) (list 1 2 3 4 5 6)))\n          (display \"append failed\"))\n    (when (not (list-equal? (cdr (list 3 2 1)) (list 2 1))) (display \"cdr failed\"))\n    (when (not (list-equal? (cons 1 (list 2 3)) (list 1 2 3))) (display \"cons failed\"))\n    (when (not (eq? (foldl (lambda (a r) (+ a r)) 0 (list 1 2 1 1)) 5))\n          (display \"fold failed\"))\n    (when (not (eq? (foldl (lambda (a b r) (+ a b r)) 0 (list 1 2 1 1) (list 2 2 5 5)) 19))\n          (display \"fold multiple failed\"))\n    (when (not (list-equal? (map (lambda (i) (+ i 1)) (list 1 2 3 4)) (list 2 3 4 5)))\n          (display \"map failed\"))\n    (when (not (eq? (let ((a 1) (b 2) (c 3)) (+ a b c)) 6)) (display \"let failed\"))\n    (when (not (eq? (let ((a 1) (b 2) (c 3)) (list 2 3) (+ a b c)) 6)) (display \"let(2) failed\"))\n    (when (not (eq? a 10)) (display \"set! failed\"))\n    (when (not (eq? (factorial 10) 3628800)) (display \"factorial test failed\"))\n    (when (not (eq? (list-ref (list-replace (list 1 2 3) 2 4) 2) 4)) (display \"list-replace failed\"))\n    (when (not (list-equal? (build-list 10 (lambda (n) n)) (list 0 1 2 3 4 5 6 7 8 9)))\n          (display \"build-list failed\"))\n    (when (eq? (not (+ 200 3)) 203) (display \"+ failed\"))\n    (when (not (eq? (cond (#t (+ 3 2) (+ 100 1)) (else (+ 4 3))) 101)) (display \"cond test failed\"))\n    (when (not (eq? (when #t (+ 3 2) (+ 100 1)) 101)) (display \"when test failed\"))\n    (when (not (eq? (cadr (assoc 2 (list (list 3 \"one\") (list 2 \"three\")))) \"three\")) (display \"assoc test failed\"))\n    (when (not (eq? (symbol->string \'one) \"one\")) (display \"symbol->string failed\"))\n    ;;(when (not (eq? (string->symbol \"one\") \'one)) (display \"string->symbol failed\"))\n    ;;(msg (string->symbol \"one\"))\n    ;;(msg \'one)\n    ))\n\n(unit-test)\n", "scm/random.jscm": ";; -*- mode: scheme; -*-\n;; Planet Fluxus Copyright (C) 2013 Dave Griffiths\n;;\n;; This program is free software: you can redistribute it and/or modify\n;; it under the terms of the GNU Affero General Public License as\n;; published by the Free Software Foundation, either version 3 of the\n;; License, or (at your option) any later version.\n;;\n;; This program is distributed in the hope that it will be useful,\n;; but WITHOUT ANY WARRANTY; without even the implied warranty of\n;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n;; GNU Affero General Public License for more details.\n;;\n;; You should have received a copy of the GNU Affero General Public License\n;; along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\n(define (rndvec) (vector (rndf) (rndf) (rndf)))\n\n(define (crndf)\n  (* (- (rndf) 0.5) 2))\n\n(define (crndvec)\n  (vector (crndf) (crndf) (crndf)))\n\n(define (srndvec)\n  (define (loop v)\n    (if (> (vmag v) 1) ; todo: use non sqrt version\n        (loop (crndvec))\n        v))\n  (loop (crndvec)))\n\n(define (rndcirc2d)\n  (let ((a (* 2 3.141 (rndf))))\n    (list (sin a) (cos a))))\n\n(define (hsrndvec)\n  (define (loop v)\n    (let ((l (vmag v)))\n      (if (or (> l 1) (eq? l 0))\n          (loop (crndvec))\n          (vdiv v l))))\n  (loop (crndvec)))\n\n(define (grndf)\n  (define (loop x y)\n    (let ((l (+ (* x x) (* y y))))\n      (if (or (>= l 1) (eq? l 0))\n          (loop (crndf) (crndf))\n          (* (sqrt (/ (* -2 (log l)) l)) x))))\n  (loop (crndf) (crndf)))\n\n(define (grndvec)\n  (vector (grndf) (grndf) (grndf)))\n\n(define (rndbary)\n  (let ((a (- 1.0 (sqrt (rndf)))))\n    (let ((b (* (rndf) (- 1.0 a))))\n      (let ((c (- 1.0 (+ a b))))\n        (vector a b c)))))\n\n; return a line on the hemisphere\n(define (rndhemi n)\n  (define (loop v)\n    (if (> (vdot n v) 0)\n        v\n        (loop (srndvec))))\n  (loop (srndvec)))\n\n(define (hrndhemi n)\n  (define (loop v)\n    (if (> (vdot n v) 0)\n        v\n        (loop (hsrndvec))))\n  (loop (hsrndvec)))\n\n(define (hcrndvec s)\n  (let ((a (* (rndf) 360)))\n    (vector (* s (sin a)) (* s (cos a)) 0)))\n"});
+      init_static(';; -*- mode: scheme; -*-\n\
+;; Planet Fluxus Copyright (C) 2013 Dave Griffiths\n\
+;;\n\
+;; This program is free software: you can redistribute it and/or modify\n\
+;; it under the terms of the GNU Affero General Public License as\n\
+;; published by the Free Software Foundation, either version 3 of the\n\
+;; License, or (at your option) any later version.\n\
+;;\n\
+;; This program is distributed in the hope that it will be useful,\n\
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
+;; GNU Affero General Public License for more details.\n\
+;;\n\
+;; You should have received a copy of the GNU Affero General Public License\n\
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
+\n\
+;; todo make data-driven and make define-syntax!\n\
+(define ret (lambda (code)\n\
+  (cond\n\
+   ((not (list? code)) code)\n\
+   ((null? code) ())\n\
+\n\
+   ;; with-state\n\
+   ((eq? (car code) "with_state")\n\
+    (append\n\
+     (list "begin" (list "push"))\n\
+      (list (list "let"\n\
+                  (list (list "r" (append (list "begin") (do-syntax (cdr code)))))\n\
+                  (list "pop") "r"))))\n\
+\n\
+   ;; with-primitive\n\
+   ((eq? (car code) "with_primitive")\n\
+    (append\n\
+     (list "begin" (list "grab" (cadr code)))\n\
+     (list (list "let"\n\
+                 (list (list "r" (append (list "begin") (do-syntax (cdr code)))))\n\
+                 (list "ungrab") "r"))))\n\
+\n\
+   ((eq? (car code) "every_frame")\n\
+    (append\n\
+     (list "every_frame_impl")\n\
+     (list\n\
+      (list "lambda" (list)\n\
+            (do-syntax (cdr code))))))\n\
+\n\
+\n\
+   ;; define a function\n\
+   ((and\n\
+     (eq? (car code) "define")\n\
+     (list? (cadr code)))\n\
+    (let ((name (car (cadr code)))\n\
+          (args (cdr (cadr code)))\n\
+          (body (do-syntax (cdr (cdr code)))))\n\
+      (list "define" name (append (list "lambda" args) body))))\n\
+\n\
+   (else (cons (do-syntax (car code))\n\
+               (do-syntax (cdr code)))))))\n\
+\n\
+ret\n\
+',';; -*- mode: scheme; -*-\n\
+(load "scm/maths.jscm")\n\
+(load "scm/random.jscm")\n\
+\n\
+(define canvas (document.getElementById "canvas"))\n\
+(define ctx (canvas.getContext "2d"))\n\
+(define screen-width 480)\n\
+(define screen-height 600)\n\
+(set! canvas.width screen-width)\n\
+(set! canvas.height screen-height)\n\
+(define load-time (/ (js "new Date()") 1000))\n\
+(define current-time 0)\n\
+(define current-delta 0)\n\
+(define swing-squash 1.0)\n\
+\n\
+(define (update-time)\n\
+  (let ((t (- (/ (js "new Date()") 1000) load-time)))\n\
+    (set! current-delta (- t current-time))\n\
+    (set! current-time t)))\n\
+\n\
+(define (make-robot name type code pc d a col t ribbon)\n\
+  (list name type code pc d a col t ribbon))\n\
+\n\
+(define (robot-name r) (list-ref r 0))\n\
+(define (robot-type r) (list-ref r 1))\n\
+(define (robot-code r) (list-ref r 2))\n\
+(define (robot-modify-code r v) (list-replace r 2 v))\n\
+(define (robot-pc r) (list-ref r 3))\n\
+(define (robot-modify-pc r s) (list-replace r 3 s))\n\
+(define (robot-d r) (list-ref r 4))\n\
+(define (robot-modify-d r s) (list-replace r 4 s))\n\
+(define (robot-a r) (list-ref r 5))\n\
+(define (robot-modify-a r s) (list-replace r 5 s))\n\
+(define (robot-col r) (list-ref r 6))\n\
+(define (robot-t r) (list-ref r 7))\n\
+(define (robot-modify-t r s) (list-replace r 7 s))\n\
+(define (robot-ribbon r) (list-ref r 8))\n\
+(define (robot-modify-ribbon r s) (list-replace r 8 s))\n\
+\n\
+(define (robot-render r ctx px py)\n\
+  (ctx.beginPath)\n\
+  (let ((x (* (robot-d r) (cos (robot-a r))))\n\
+	(y (* (robot-d r) (sin (robot-a r)) 0.5)))\n\
+    (set! ctx.fillStyle (robot-col r))\n\
+    (ctx.arc (+ px x) (+ py y) 10 0 (* Math.PI 2) true)\n\
+    (ctx.closePath)\n\
+    (ctx.fill)\n\
+    \n\
+    (set! ctx.fillStyle (robot-col r))\n\
+    (set! ctx.strokeStyle (robot-col r))\n\
+    (set! ctx.lineWidth 6)\n\
+    (ctx.beginPath)\n\
+    (ctx.moveTo (+ px x) (+ py y))\n\
+    (for-each\n\
+     (lambda (p)\n\
+       (ctx.lineTo (+ px (list-ref p 0))\n\
+		   (+ py (list-ref p 1))))\n\
+     (robot-ribbon r))\n\
+    (ctx.stroke)\n\
+    (set! ctx.lineWidth 1)\n\
+  \n\
+    (set! ctx.fillStyle "#000")\n\
+    (ctx.fillText (robot-name r) (- (+ px x) 3) (+ (+ py y) 5))\n\
+  ))\n\
+\n\
+(define PI Math.PI)\n\
+(define tick-dur 1)\n\
+(define warp-dist 100)\n\
+\n\
+(define (cosi t) (sin (* t PI)))\n\
+(define (clamp v min max) (if (> v max) max (if (< v min) min v)))\n\
+\n\
+(define (fix-size l max) (l.slice 0 max))\n\
+\n\
+(define (robot-instr r offs)\n\
+  (list-ref\n\
+   (robot-code r)\n\
+   (modulo (+ (robot-pc r) offs)\n\
+	   (length (robot-code r)))))\n\
+\n\
+(define (robot-update r t d) \n\
+  (let ((dir ;; calculate the direction from the token \n\
+	 (* (cond\n\
+	     ((eq? (robot-instr r 0) "f") 1)\n\
+	     ((eq? (robot-instr r 0) "b") -1)\n\
+	     (else 0))\n\
+	    ;; if the next token is different, smooth\n\
+	    (if (not (eq? (robot-instr r 0) (robot-instr r 1)))	      \n\
+		(cosi (/ (robot-t r) tick-dur))\n\
+		1)))\n\
+	;; update the time and program counter\n\
+	(r (if (> (robot-t r) tick-dur)\n\
+	       (robot-modify-t\n\
+		(robot-modify-pc\n\
+		 r (modulo (+ (robot-pc r) 1) (length (robot-code r))))\n\
+		0)\n\
+	       (robot-modify-t r (+ (robot-t r) d)))))\n\
+    (robot-modify-ribbon\n\
+     (if (eq? (robot-type r) "warp")\n\
+	 (robot-modify-d r (clamp (+ (robot-d r) (* d dir warp-dist)) 50 150))\n\
+	 (robot-modify-a r (+ (robot-a r) (* d dir (/ PI 2)))))\n\
+     (fix-size\n\
+      (cons \n\
+       (list\n\
+	(* (robot-d r) (cos (robot-a r)))\n\
+	(* (robot-d r) (sin (robot-a r)) 0.5))\n\
+       (index-map\n\
+	(lambda (i p)	  \n\
+	  (list (* (list-ref p 0) 0.995)\n\
+		(+ (list-ref p 1) (* -130 d))))\n\
+	(robot-ribbon r)))\n\
+      240))))\n\
+\n\
+(define rot (/ PI 4))\n\
+\n\
+(define r\n\
+  (list\n\
+   (make-robot "A" "warp" "ffbb" 0 50 rot  "#5aa" 0 \'())\n\
+   (make-robot "B" "warp" "ffbb" 0 50 (+ rot (/ PI 2)) "#5aa" 0 \'())\n\
+   (make-robot "C" "warp" "ffbb" 0 50 (+ rot PI)  "#5aa" 0 \'())\n\
+   (make-robot "D" "warp" "ffbb" 0 50 (+ rot PI (/ PI 2)) "#5aa" 0 \'())\n\
+   (make-robot "E" "weft" "ffff" 0 100 0  "#aa5" 0 \'())\n\
+   (make-robot "F" "weft" "ffff" 0 100 (/ PI 2) "#aa5" 0 \'())\n\
+   (make-robot "G" "weft" "ffff" 0 100 PI "#aa5" 0 \'())\n\
+   (make-robot "H" "weft" "ffff" 0 100 (+ PI (/ PI 2)) "#aa5" 0 \'())))\n\
+\n\
+\n\
+(define (str-replaceat s i c)\n\
+  (+ (s.substr 0 i) c (s.substr (+ i 1) (length s))))\n\
+\n\
+(define (pattern-update id dir)\n\
+  (let ((robot-id (floor (/ (string->number id) 4)))\n\
+	(pattern-loc (modulo (string->number id) 4)))\n\
+    (let ((new-code (robot-code (list-ref r robot-id))))\n\
+      (set! new-code (str-replaceat new-code pattern-loc dir))\n\
+      (set! r (list-replace r robot-id\n\
+			    (robot-modify-code\n\
+			     (list-ref r robot-id)\n\
+			     new-code))))))\n\
+\n\
+\n\
+(define tcanvas (document.createElement "canvas"))\n\
+(set! tcanvas.width screen-width)\n\
+(set! tcanvas.height screen-height)\n\
+(define tctx (tcanvas.getContext "2d"))\n\
+;;(set! ctx.imageSmoothingEnabled #f)\n\
+;;(set! tctx.imageSmoothingEnabled #f)\n\
+\n\
+(define (render)\n\
+  (update-time)\n\
+  ;;(let ((im (ctx.getImageData 0 0 screen-width screen-height))))\n\
+    (ctx.clearRect 0 0 screen-width screen-height)\n\
+    \n\
+    (set! r (map\n\
+	     (lambda (r)\n\
+	       (robot-update r current-time current-delta))\n\
+	     r))\n\
+\n\
+    (when (> (robot-t (list-ref r 0)) tick-dur)\n\
+	  (indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))\n\
+    \n\
+    (ctx.beginPath)\n\
+    (ctx.arc 240 320 20 0 (* Math.PI 2) true)\n\
+    (ctx.closePath)\n\
+    (set! ctx.fillStyle "#000")\n\
+    (ctx.fill)\n\
+\n\
+    (for-each\n\
+     (lambda (r)\n\
+       (robot-render r ctx 240 520))\n\
+     r)\n\
+    \n\
+;;    (tctx.putImageData im 0 0)\n\
+\n\
+;     (ctx.drawImage\n\
+;      tcanvas\n\
+;      swing-squash -2.2\n\
+;      (- screen-width (* swing-squash 2)) (+ screen-height 2)\n\
+;      )\n\
+    \n\
+    (window.requestAnimationFrame render ctx))\n\
+\n\
+(window.requestAnimationFrame render ctx)\n\
+\n\
+  \n\
+');    
+      });
+    </script>
+
+</html>
