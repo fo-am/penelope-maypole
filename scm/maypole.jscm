@@ -113,7 +113,7 @@
 
 (define rot (/ PI 4))
 
-(define r
+(define (build-robots)
   (list
    (make-robot "A" "warp" "ffbb" 0 50 rot  "#5aa" 0 '())
    (make-robot "B" "warp" "ffbb" 0 50 (+ rot (/ PI 2)) "#5aa" 0 '())
@@ -124,6 +124,7 @@
    (make-robot "G" "weft" "ffff" 0 100 PI "#aa5" 0 '())
    (make-robot "H" "weft" "ffff" 0 100 (+ PI (/ PI 2)) "#aa5" 0 '())))
 
+(define r (build-robots))
 
 (define (str-replaceat s i c)
   (+ (s.substr 0 i) c (s.substr (+ i 1) (length s))))
@@ -138,13 +139,14 @@
 			     (list-ref r robot-id)
 			     new-code))))))
 
-
 (define tcanvas (document.createElement "canvas"))
 (set! tcanvas.width screen-width)
 (set! tcanvas.height screen-height)
 (define tctx (tcanvas.getContext "2d"))
 ;;(set! ctx.imageSmoothingEnabled #f)
 ;;(set! tctx.imageSmoothingEnabled #f)
+
+
 
 (define (render)
   (update-time)
@@ -157,7 +159,7 @@
 	     r))
 
     (when (> (robot-t (list-ref r 0)) tick-dur)
-	  (indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))
+	  (pattern-matrix-indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))
     
     (ctx.beginPath)
     (ctx.arc 240 320 20 0 (* Math.PI 2) true)
@@ -180,6 +182,46 @@
     
     (window.requestAnimationFrame render ctx))
 
+(define (reset)
+  (set! r (build-robots)))
+
+(define (preset-tabby)
+  (pattern_matrix_program (list "f" "b" "f" "b" 
+				"b" "f" "b" "f"
+				"f" "b" "f" "b" 
+				"b" "f" "b" "f") 
+			  (list "f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f")))
+(define (preset-basket)
+  (pattern_matrix_program (list "b" "b" "f" "f" 
+				"b" "b" "f" "f"
+				"f" "f" "b" "b" 
+				"f" "f" "b" "b") 
+			  (list "f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f")))
+(define (preset-31-twill)
+  (pattern_matrix_program (list "b" "f" "f" "f" 
+				"f" "b" "f" "f"
+				"f" "f" "b" "f" 
+				"f" "f" "f" "b") 
+			  (list "f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f")))
+(define (preset-22-twill)
+  (pattern_matrix_program (list "b" "b" "f" "f" 
+				"f" "b" "b" "f"
+				"f" "f" "b" "b" 
+				"b" "f" "f" "b") 
+			  (list "f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f" 
+				"f" "f" "f" "f")))
+  
 (window.requestAnimationFrame render ctx)
 
   
