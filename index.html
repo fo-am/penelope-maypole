@@ -69,8 +69,7 @@
 	  <a href="javascript:preset_basket();">basket</a>
 	  <a href="javascript:preset_31_twill();">3/1 twill</a>
 	  <a href="javascript:preset_22_twill();">2/2 twill</a><br>
-	  <a href="javascript:reset();">reset</a><br>
-	  
+	  <a href="javascript:maypole_reset();">reset</a>	  
 	</div>
 	
         <div style="display:none;">
@@ -271,7 +270,7 @@ ret\n\
    (make-robot "G" "weft" "ffff" 0 100 PI "#aa5" 0 \'())\n\
    (make-robot "H" "weft" "ffff" 0 100 (+ PI (/ PI 2)) "#aa5" 0 \'())))\n\
 \n\
-(define r (build-robots))\n\
+(define robots (build-robots))\n\
 \n\
 (define (str-replaceat s i c)\n\
   (+ (s.substr 0 i) c (s.substr (+ i 1) (length s))))\n\
@@ -279,12 +278,12 @@ ret\n\
 (define (pattern-update id dir)\n\
   (let ((robot-id (floor (/ (string->number id) 4)))\n\
 	(pattern-loc (modulo (string->number id) 4)))\n\
-    (let ((new-code (robot-code (list-ref r robot-id))))\n\
+    (let ((new-code (robot-code (list-ref robots robot-id))))\n\
       (set! new-code (str-replaceat new-code pattern-loc dir))\n\
-      (set! r (list-replace r robot-id\n\
-			    (robot-modify-code\n\
-			     (list-ref r robot-id)\n\
-			     new-code))))))\n\
+      (set! robots (list-replace robots robot-id\n\
+				 (robot-modify-code\n\
+				  (list-ref robots robot-id)\n\
+				  new-code))))))\n\
 \n\
 (define tcanvas (document.createElement "canvas"))\n\
 (set! tcanvas.width screen-width)\n\
@@ -300,13 +299,13 @@ ret\n\
   ;;(let ((im (ctx.getImageData 0 0 screen-width screen-height))))\n\
     (ctx.clearRect 0 0 screen-width screen-height)\n\
     \n\
-    (set! r (map\n\
-	     (lambda (r)\n\
-	       (robot-update r current-time current-delta))\n\
-	     r))\n\
-\n\
-    (when (> (robot-t (list-ref r 0)) tick-dur)\n\
-	  (pattern-matrix-indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))\n\
+    (set! robots (map\n\
+		  (lambda (r)\n\
+		    (robot-update r current-time current-delta))\n\
+		  robots))\n\
+    \n\
+    (when (> (robot-t (list-ref robots 0)) tick-dur)\n\
+	  (pattern-matrix-indicate (modulo (+ 1 (robot-pc (list-ref robots 0))) 4)))\n\
     \n\
     (ctx.beginPath)\n\
     (ctx.arc 240 320 20 0 (* Math.PI 2) true)\n\
@@ -317,7 +316,7 @@ ret\n\
     (for-each\n\
      (lambda (r)\n\
        (robot-render r ctx 240 520))\n\
-     r)\n\
+     robots)\n\
     \n\
 ;;    (tctx.putImageData im 0 0)\n\
 \n\
@@ -329,8 +328,10 @@ ret\n\
     \n\
     (window.requestAnimationFrame render ctx))\n\
 \n\
-(define (reset)\n\
-  (set! r (build-robots)))\n\
+(define (maypole-reset)\n\
+  (set! robots (build-robots))\n\
+  (console.log "hello")\n\
+  )\n\
 \n\
 (define (preset-tabby)\n\
   (pattern_matrix_program (list "f" "b" "f" "b" \n\

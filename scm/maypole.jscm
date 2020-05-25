@@ -124,7 +124,7 @@
    (make-robot "G" "weft" "ffff" 0 100 PI "#aa5" 0 '())
    (make-robot "H" "weft" "ffff" 0 100 (+ PI (/ PI 2)) "#aa5" 0 '())))
 
-(define r (build-robots))
+(define robots (build-robots))
 
 (define (str-replaceat s i c)
   (+ (s.substr 0 i) c (s.substr (+ i 1) (length s))))
@@ -132,12 +132,12 @@
 (define (pattern-update id dir)
   (let ((robot-id (floor (/ (string->number id) 4)))
 	(pattern-loc (modulo (string->number id) 4)))
-    (let ((new-code (robot-code (list-ref r robot-id))))
+    (let ((new-code (robot-code (list-ref robots robot-id))))
       (set! new-code (str-replaceat new-code pattern-loc dir))
-      (set! r (list-replace r robot-id
-			    (robot-modify-code
-			     (list-ref r robot-id)
-			     new-code))))))
+      (set! robots (list-replace robots robot-id
+				 (robot-modify-code
+				  (list-ref robots robot-id)
+				  new-code))))))
 
 (define tcanvas (document.createElement "canvas"))
 (set! tcanvas.width screen-width)
@@ -153,13 +153,13 @@
   ;;(let ((im (ctx.getImageData 0 0 screen-width screen-height))))
     (ctx.clearRect 0 0 screen-width screen-height)
     
-    (set! r (map
-	     (lambda (r)
-	       (robot-update r current-time current-delta))
-	     r))
-
-    (when (> (robot-t (list-ref r 0)) tick-dur)
-	  (pattern-matrix-indicate (modulo (+ 1 (robot-pc (list-ref r 0))) 4)))
+    (set! robots (map
+		  (lambda (r)
+		    (robot-update r current-time current-delta))
+		  robots))
+    
+    (when (> (robot-t (list-ref robots 0)) tick-dur)
+	  (pattern-matrix-indicate (modulo (+ 1 (robot-pc (list-ref robots 0))) 4)))
     
     (ctx.beginPath)
     (ctx.arc 240 320 20 0 (* Math.PI 2) true)
@@ -170,7 +170,7 @@
     (for-each
      (lambda (r)
        (robot-render r ctx 240 520))
-     r)
+     robots)
     
 ;;    (tctx.putImageData im 0 0)
 
@@ -182,8 +182,10 @@
     
     (window.requestAnimationFrame render ctx))
 
-(define (reset)
-  (set! r (build-robots)))
+(define (maypole-reset)
+  (set! robots (build-robots))
+  (console.log "hello")
+  )
 
 (define (preset-tabby)
   (pattern_matrix_program (list "f" "b" "f" "b" 
